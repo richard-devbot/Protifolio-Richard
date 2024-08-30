@@ -20,6 +20,6 @@ export const personalData = {
   twitter: 'https://x.com/GundeRicha82508',
   stackOverflow: 'https://meta.stackoverflow.com/users/27074001/richardson-gunde',
   leetcode: "https://leetcode.com/profile/",
-  // devUsername: "said7388",
+  mediumUsername: "honeyricky1m3",
   resume: "https://drive.google.com/file/d/1w6NyMakSKg3SLiE4Vtrp7MLLHKhqElZF/view?usp=drive_link"
 }
