@@ -1,7 +1,7 @@
 // @flow strict
 
 import { personalData } from "@/utils/data/personal-data";
-import BlogCard from "../components/homepage/blog/blog-card.js";
+import BlogCard from "../components/homepage/blog/blog-card";
 
 async function getAllBlogs() {
   const username = personalData.mediumUsername;
