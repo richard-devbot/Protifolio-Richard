@@ -1,40 +1,77 @@
 import { personalData } from "@/utils/data/personal-data";
+import { Suspense } from "react";
+import dynamic from 'next/dynamic';
+
+// Import server-safe components directly
 import AboutSection from "./components/homepage/about";
-import Blog from "./components/homepage/blog";
-import ContactSection from "./components/homepage/contact";
 import Education from "./components/homepage/education";
 import Experience from "./components/homepage/experience";
-import HeroSection from "./components/homepage/hero-section";
-import Projects from "./components/homepage/projects";
-import Skills from "./components/homepage/skills";
+
+// Dynamically import components that might use browser APIs
+const HeroSection = dynamic(() => import("./components/homepage/hero-section"), { ssr: true });
+const Skills = dynamic(() => import("./components/homepage/skills"), { ssr: true });
+const Projects = dynamic(() => import("./components/homepage/projects"), { ssr: true });
+const Blog = dynamic(() => import("./components/homepage/blog"), { ssr: true });
+const ContactSection = dynamic(() => import("./components/homepage/contact"), { ssr: true });
 
 async function getData() {
-  const res = await fetch(`https://dev.to/api/articles?username=${personalData.devUsername}`)
+  try {
+    // Check if the username exists
+    if (!personalData.devUsername) {
+      console.log('No dev username provided, skipping blog fetch');
+      return [];
+    }
+    
+    const res = await fetch(`https://dev.to/api/articles?username=${personalData.devUsername}`, { next: { revalidate: 3600 } });
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch data')
+    if (!res.ok) {
+      console.error('Failed to fetch data from dev.to');
+      return [];
+    }
+
+    const data = await res.json();
+    const filtered = data.filter((item) => item?.cover_image).sort(() => Math.random() - 0.5);
+    return filtered;
+  } catch (error) {
+    console.error('Error fetching blog data:', error);
+    return [];
   }
-
-  const data = await res.json();
-
-  const filtered = data.filter((item) => item?.cover_image).sort(() => Math.random() - 0.5);
-
-  return filtered;
-};
+}
 
 export default async function Home() {
-  const blogs = await getData();
+  let blogs = [];
+  try {
+    blogs = await getData();
+  } catch (error) {
+    console.error('Error in getData:', error);
+  }
 
   return (
     <>
-      <HeroSection />
-      <AboutSection />
-      <Experience />
-      <Skills />
-      <Projects />
-      <Education />
-      <Blog blogs={blogs} />
-      <ContactSection />
+      <Suspense fallback={<div>Loading hero section...</div>}>
+        <HeroSection />
+      </Suspense>
+      <Suspense fallback={<div>Loading about section...</div>}>
+        <AboutSection />
+      </Suspense>
+      <Suspense fallback={<div>Loading experience section...</div>}>
+        <Experience />
+      </Suspense>
+      <Suspense fallback={<div>Loading skills section...</div>}>
+        <Skills />
+      </Suspense>
+      <Suspense fallback={<div>Loading projects section...</div>}>
+        <Projects />
+      </Suspense>
+      <Suspense fallback={<div>Loading education section...</div>}>
+        <Education />
+      </Suspense>
+      <Suspense fallback={<div>Loading blog section...</div>}>
+        <Blog blogs={blogs} />
+      </Suspense>
+      <Suspense fallback={<div>Loading contact section...</div>}>
+        <ContactSection />
+      </Suspense>
     </>
-  )
-};
+  );
+}
