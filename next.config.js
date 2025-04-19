@@ -22,17 +22,12 @@ module.exports = {
         pathname: '**',
       },
     ],
+    unoptimized: true, // This helps with static export
   },
-  // Add these settings for better performance and error handling
-  output: 'standalone',
-  poweredByHeader: false,
-  reactStrictMode: true,
-  swcMinify: true,
-  // Disable server-side rendering for components that use browser APIs
+  // Change to export for static site generation
+  output: 'export',
+  // Remove the invalid option and keep only valid experimental features
   experimental: {
-    // This helps with hydration issues
     optimizeCss: true,
-    // Increase the timeout for static generation
-    staticPageGenerationTimeout: 180,
   }
 }
