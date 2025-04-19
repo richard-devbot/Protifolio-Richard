@@ -1,7 +1,7 @@
 // @flow strict
 import { XMLParser } from 'fast-xml-parser';
 import BlogCard from "../components/homepage/blog/blog-card";
-import { personalData } from "@/utils/data/personal-data"; // Keep for potential future use or consistency
+import { personalData } from "@/utils/data/personal-data";
 
 // Helper function to extract the first image URL from HTML content
 const extractImageUrl = (htmlContent) => {
