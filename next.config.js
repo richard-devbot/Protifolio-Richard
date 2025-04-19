@@ -18,9 +18,11 @@ module.exports = {
       },
       {
         protocol: 'https',
-        hostname: '**.medium.com', // Added this pattern for Medium images
+        hostname: '**.medium.com',
         pathname: '**',
       },
     ],
   },
+  // Add this to help with static generation
+  output: 'standalone',
 }
