@@ -16,6 +16,11 @@ module.exports = {
         hostname: 'media.dev.to',
         pathname: '**',
       },
+      {
+        protocol: 'https',
+        hostname: '**.medium.com', // Added this pattern for Medium images
+        pathname: '**',
+      },
     ],
   },
 }

@@ -1,43 +1,80 @@
 // @flow strict
-
-import { personalData } from "@/utils/data/personal-data";
+import { XMLParser } from 'fast-xml-parser';
 import BlogCard from "../components/homepage/blog/blog-card";
+import { personalData } from "@/utils/data/personal-data"; // Keep for potential future use or consistency
+
+// Helper function to extract the first image URL from HTML content
+const extractImageUrl = (htmlContent) => {
+  if (!htmlContent) return null;
+  const imgTagMatch = htmlContent.match(/<img[^>]+src="([^">]+)"/);
+  return imgTagMatch ? imgTagMatch[1] : null;
+};
+
+// Helper function to extract text from the first <p> tag and strip other tags
+const extractSubtitle = (htmlContent) => {
+  if (!htmlContent) return '';
+  // Find the first paragraph tag
+  const pTagMatch = htmlContent.match(/<p>(.*?)<\/p>/);
+  let text = pTagMatch ? pTagMatch[1] : '';
+  // Strip remaining HTML tags
+  text = text.replace(/<[^>]*>/g, '');
+  // Limit length if necessary
+  // text = text.substring(0, 150) + (text.length > 150 ? '...' : ''); 
+  return text;
+};
+
 
 async function getAllBlogs() {
-  const username = personalData.mediumUsername;
-  const res = await fetch(`https://medium.com/@${username}`);
-  
-  if (!res.ok) {
-    console.error('Failed to fetch data:', await res.text());
+  const mediumUsername = 'honeyricky1m3'; // Use your username directly or from personalData if preferred
+  const rssFeedUrl = `https://medium.com/feed/@${mediumUsername}`;
+
+  try {
+    const res = await fetch(rssFeedUrl, { cache: 'no-store' }); // Fetch fresh data
+
+    if (!res.ok) {
+      console.error('Failed to fetch RSS feed:', res.status, await res.text());
+      return [];
+    }
+
+    const xmlText = await res.text();
+    const parser = new XMLParser({
+      ignoreAttributes: false, // Need attributes like src
+      attributeNamePrefix : "" // Don't prefix attributes
+    });
+    const rssJson = parser.parse(xmlText);
+
+    if (!rssJson.rss || !rssJson.rss.channel || !rssJson.rss.channel.item) {
+        console.error('Failed to parse RSS feed or feed is empty');
+        return [];
+    }
+
+    // Ensure items is always an array
+    const items = Array.isArray(rssJson.rss.channel.item) 
+      ? rssJson.rss.channel.item 
+      : [rssJson.rss.channel.item];
+
+    const blogs = items.map(item => {
+      const contentEncoded = item['content:encoded'] || item.description || '';
+      const imageUrl = extractImageUrl(contentEncoded);
+      const subtitle = extractSubtitle(contentEncoded) || item.title; // Fallback to title if no description
+
+      return {
+        // id: item.guid, // Can use guid as a unique key if needed
+        title: item.title,
+        subtitle: subtitle,
+        url: item.link,
+        publishedAt: item.pubDate,
+        imageUrl: imageUrl, // Pass direct image URL
+        // claps: 0, // Claps not available in RSS
+      };
+    });
+
+    return blogs;
+
+  } catch (error) {
+    console.error('Error fetching or parsing RSS feed:', error);
     return [];
   }
-
-  const html = await res.text();
-  
-  // Extract the JSON data from the HTML
-  const jsonMatch = html.match(/<script>window.__APOLLO_STATE__ = (.*?)<\/script>/);
-  if (!jsonMatch) {
-    console.error('Failed to extract JSON data from HTML');
-    return [];
-  }
-
-  const jsonData = JSON.parse(jsonMatch[1]);
-
-  // Extract blog post data from the JSON
-  const blogs = Object.values(jsonData)
-    .filter(item => item.__typename === 'Post')
-    .map(post => ({
-      id: post.id,
-      title: post.title,
-      subtitle: post.subtitle,
-      slug: post.uniqueSlug,
-      publishedAt: post.firstPublishedAt,
-      url: `https://medium.com/@${username}/${post.uniqueSlug}`,
-      claps: post.clapCount,
-      imageId: post.previewImage && post.previewImage.id
-    }));
-
-  return blogs;
 }
 
 async function page() {
@@ -58,10 +95,10 @@ async function page() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 lg:gap-8 xl:gap-10">
         {blogs.length > 0 ? (
           blogs.map((blog, i) => (
-            <BlogCard blog={blog} key={i} />
+            <BlogCard blog={blog} key={blog.url || i} /> // Use URL as key if available
           ))
         ) : (
-          <p className="text-center col-span-3 text-white">No blogs found. Please check your Medium username.</p>
+          <p className="text-center col-span-3 text-white">Could not fetch blogs from Medium.</p>
         )}
       </div>
     </div>
