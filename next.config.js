@@ -31,7 +31,7 @@ module.exports = {
   // Disable server-side rendering for components that use browser APIs
   experimental: {
     // This helps with hydration issues
-    optimizeCss: true,
+    // optimizeCss: true,
     // Increase the timeout for static generation
     staticPageGenerationTimeout: 180,
   }
