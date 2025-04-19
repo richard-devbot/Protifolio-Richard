@@ -7,12 +7,12 @@ import AboutSection from "./components/homepage/about";
 import Education from "./components/homepage/education";
 import Experience from "./components/homepage/experience";
 
-// Dynamically import components that might use browser APIs
-const HeroSection = dynamic(() => import("./components/homepage/hero-section"), { ssr: true });
-const Skills = dynamic(() => import("./components/homepage/skills"), { ssr: true });
-const Projects = dynamic(() => import("./components/homepage/projects"), { ssr: true });
-const Blog = dynamic(() => import("./components/homepage/blog"), { ssr: true });
-const ContactSection = dynamic(() => import("./components/homepage/contact"), { ssr: true });
+// Dynamically import components that might use browser APIs with ssr: false
+const HeroSection = dynamic(() => import("./components/homepage/hero-section"), { ssr: false });
+const Skills = dynamic(() => import("./components/homepage/skills"), { ssr: false });
+const Projects = dynamic(() => import("./components/homepage/projects"), { ssr: false });
+const Blog = dynamic(() => import("./components/homepage/blog"), { ssr: false });
+const ContactSection = dynamic(() => import("./components/homepage/contact"), { ssr: false });
 
 async function getData() {
   try {
