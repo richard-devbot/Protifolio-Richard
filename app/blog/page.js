@@ -1,4 +1,3 @@
-// @flow strict
 import { XMLParser } from 'fast-xml-parser';
 import BlogCard from "../components/homepage/blog/blog-card";
 import { personalData } from "@/utils/data/personal-data";
@@ -25,11 +24,18 @@ const extractSubtitle = (htmlContent) => {
 
 
 async function getAllBlogs() {
-  const mediumUsername = 'honeyricky1m3'; // Use your username directly or from personalData if preferred
+  const mediumUsername = personalData.mediumUsername;
+  if (!mediumUsername) {
+    return [];
+  }
   const rssFeedUrl = `https://medium.com/feed/@${mediumUsername}`;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
   try {
-    const res = await fetch(rssFeedUrl, { cache: 'no-store' }); // Fetch fresh data
+    const res = await fetch(rssFeedUrl, { signal: controller.signal, next: { revalidate: 3600 } });
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       console.error('Failed to fetch RSS feed:', res.status, await res.text());
@@ -49,8 +55,8 @@ async function getAllBlogs() {
     }
 
     // Ensure items is always an array
-    const items = Array.isArray(rssJson.rss.channel.item) 
-      ? rssJson.rss.channel.item 
+    const items = Array.isArray(rssJson.rss.channel.item)
+      ? rssJson.rss.channel.item
       : [rssJson.rss.channel.item];
 
     const blogs = items.map(item => {
@@ -72,6 +78,11 @@ async function getAllBlogs() {
     return blogs;
 
   } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      console.error('RSS feed fetch timed out after 5s');
+      return [];
+    }
     console.error('Error fetching or parsing RSS feed:', error);
     return [];
   }
