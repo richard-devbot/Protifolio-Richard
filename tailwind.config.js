@@ -12,6 +12,9 @@ module.exports = {
         'gradient-conic':
           'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
+      fontFamily: {
+        mono: ['var(--font-fira-code)', 'JetBrains Mono', 'Fira Code', 'monospace'],
+      },
       container: {
         center: true,
         padding: {
@@ -23,11 +26,8 @@ module.exports = {
           "3xl": "5rem",
         },
       },
-
-      extend: {
-        screens: {
-          "4k": "1980px",
-        },
+      screens: {
+        "4k": "1980px",
       },
     },
   },

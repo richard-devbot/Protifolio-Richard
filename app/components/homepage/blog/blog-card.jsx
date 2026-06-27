@@ -1,4 +1,3 @@
-// @flow strict
 "use client"; // <--- Add this directive
 
 import Image from 'next/image';
@@ -17,7 +16,7 @@ function BlogCard({ blog }) {
   const imageUrl = blog.imageUrl || '/png/placeholder.png'; 
 
   return (
-    <div className="border border-[#1d293a] hover:border-[#464c6a] transition-all duration-500 bg-[#1b203e] rounded-lg relative group flex flex-col">
+    <div className="border border-[#1d293a] hover:border-[#464c6a] transition-all duration-500 bg-[#1b203e] rounded-lg relative group flex flex-col hover:shadow-[0_0_20px_rgba(22,242,179,0.15)] transition-shadow duration-500">
       <div className="h-44 lg:h-52 w-auto cursor-pointer overflow-hidden rounded-t-lg relative">
         <Image
           src={imageUrl}

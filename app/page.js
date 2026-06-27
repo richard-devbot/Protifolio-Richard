@@ -1,97 +1,83 @@
-// @flow strict
-
 import { personalData } from "@/utils/data/personal-data";
-import BlogCard from "../../components/homepage/blog/blog-card";
+import { Suspense } from "react";
+import dynamic from 'next/dynamic';
 
-// This function tells Next.js which paths to pre-render at build time
-export async function generateStaticParams() {
-  const blogs = await getAllBlogs();
-  
-  // Return an array of objects with the slug parameter
-  return blogs.map(blog => ({
-    slug: blog.slug || blog.url?.split('/').pop() || 'default-slug'
-  }));
-}
+import AboutSection from "./components/homepage/about";
+import Education from "./components/homepage/education";
+import Experience from "./components/homepage/experience";
 
-async function getAllBlogs() {
+const HeroSection = dynamic(() => import("./components/homepage/hero-section"), { ssr: false });
+const Skills = dynamic(() => import("./components/homepage/skills"), { ssr: false });
+const Projects = dynamic(() => import("./components/homepage/projects"), { ssr: false });
+const Blog = dynamic(() => import("./components/homepage/blog"), { ssr: false });
+const ContactSection = dynamic(() => import("./components/homepage/contact"), { ssr: false });
+
+async function getBlogs() {
+  const username = personalData.mediumUsername;
+  if (!username) return [];
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
   try {
-    const username = personalData.mediumUsername;
-    if (!username) {
-      console.log('No Medium username provided');
-      return [];
-    }
-    
-    const res = await fetch(`https://medium.com/@${username}`, { next: { revalidate: 3600 } });
-    
-    if (!res.ok) {
-      console.error('Failed to fetch data:', await res.text());
-      return [];
-    }
+    const res = await fetch(
+      `https://api.rss2json.com/v1/api.json?rss_url=https://medium.com/feed/@${username}`,
+      { signal: controller.signal, next: { revalidate: 3600 } }
+    );
+    clearTimeout(timeoutId);
 
-    const html = await res.text();
-    
-    // Extract the JSON data from the HTML
-    const jsonMatch = html.match(/<script>window.__APOLLO_STATE__ = (.*?)<\/script>/);
-    if (!jsonMatch) {
-      console.error('Failed to extract JSON data from HTML');
-      return [];
-    }
+    if (!res.ok) return [];
 
-    try {
-      const jsonData = JSON.parse(jsonMatch[1]);
+    const data = await res.json();
+    if (data.status !== 'ok') return [];
 
-      // Extract blog post data from the JSON
-      const blogs = Object.values(jsonData)
-        .filter(item => item.__typename === 'Post')
-        .map(post => ({
-          id: post.id,
-          title: post.title,
-          subtitle: post.subtitle,
-          slug: post.uniqueSlug,
-          publishedAt: post.firstPublishedAt,
-          url: `https://medium.com/@${username}/${post.uniqueSlug}`,
-          claps: post.clapCount,
-          imageId: post.previewImage && post.previewImage.id
-        }));
-
-      return blogs;
-    } catch (error) {
-      console.error('Error parsing Medium data:', error);
-      return [];
-    }
-  } catch (error) {
-    console.error('Error in getAllBlogs:', error);
+    return (data.items || [])
+      .filter(item => item.thumbnail)
+      .slice(0, 6)
+      .map(item => ({
+        id: item.guid,
+        title: item.title,
+        description: item.description?.replace(/<[^>]+>/g, '').slice(0, 120),
+        url: item.link,
+        thumbnail: item.thumbnail,
+        publishedAt: item.pubDate,
+        categories: item.categories || [],
+      }));
+  } catch {
+    clearTimeout(timeoutId);
     return [];
   }
 }
 
-export default async function Page({ params }) {
-  const blogs = await getAllBlogs();
-  
-  // You can use params.slug to filter or display specific blog content
-  // For now, we're just showing all blogs
+export default async function Home() {
+  const blogs = await getBlogs();
 
   return (
-    <div className="py-8">
-      <div className="flex justify-center my-5 lg:py-8">
-        <div className="flex items-center">
-          <span className="w-24 h-[2px] bg-[#1a1443]"></span>
-          <span className="bg-[#1a1443] w-fit text-white p-2 px-5 text-2xl rounded-md">
-            All Blogs ({blogs.length})
-          </span>
-          <span className="w-24 h-[2px] bg-[#1a1443]"></span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 lg:gap-8 xl:gap-10">
-        {blogs.length > 0 ? (
-          blogs.map((blog, i) => (
-            <BlogCard blog={blog} key={i} />
-          ))
-        ) : (
-          <p className="text-center col-span-3 text-white">No blogs found. Please check your Medium username.</p>
-        )}
-      </div>
-    </div>
+    <>
+      <Suspense fallback={null}>
+        <HeroSection />
+      </Suspense>
+      <Suspense fallback={null}>
+        <AboutSection />
+      </Suspense>
+      <Suspense fallback={null}>
+        <Experience />
+      </Suspense>
+      <Suspense fallback={null}>
+        <Skills />
+      </Suspense>
+      <Suspense fallback={null}>
+        <Projects />
+      </Suspense>
+      <Suspense fallback={null}>
+        <Education />
+      </Suspense>
+      <Suspense fallback={null}>
+        <Blog blogs={blogs} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <ContactSection />
+      </Suspense>
+    </>
   );
 }
