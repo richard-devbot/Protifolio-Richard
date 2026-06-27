@@ -22,12 +22,15 @@ module.exports = {
         pathname: '**',
       },
     ],
-    unoptimized: true, // This helps with static export
+    unoptimized: true,
   },
-  // Change to export for static site generation
-  output: 'export',
-  // Remove the invalid option and keep only valid experimental features
+  // Server-capable build: required for the contact API routes and Medium ISR
+  output: 'standalone',
+  poweredByHeader: false,
+  reactStrictMode: true,
+  swcMinify: true,
   experimental: {
     optimizeCss: true,
+    staticPageGenerationTimeout: 180,
   }
 }
