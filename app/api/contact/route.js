@@ -28,7 +28,9 @@ export async function POST(request) {
       }, { status: 200 });
     };
   } catch (error) {
-    console.log(error.response.data)
+    if (process.env.NODE_ENV === 'development') {
+      console.error(error?.response?.data || error);
+    }
     return NextResponse.json({
       message: "Message sending failed!",
       success: false,
